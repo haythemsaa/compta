@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseReportController;
 use App\Http\Controllers\Api\ExpenseItemController;
 use App\Http\Controllers\Api\VehicleController;
@@ -31,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Vehicles
     Route::apiResource('vehicles', VehicleController::class);
+    Route::get('/vehicles/{vehicle}/mileage-rate', [VehicleController::class, 'getMileageRate']);
 
     // Mileage Expenses
     Route::apiResource('expense-reports.mileage-expenses', MileageExpenseController::class)->shallow();
@@ -39,28 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Media
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::get('/media/{media}', [MediaController::class, 'show']);
+    Route::get('/media/{media}/download', [MediaController::class, 'download']);
     Route::delete('/media/{media}', [MediaController::class, 'destroy']);
     Route::post('/media/{media}/ocr', [MediaController::class, 'processOcr']);
 
     // Dashboard & Reports
-    Route::get('/dashboard', function () {
-        $user = auth()->user();
-
-        return response()->json([
-            'stats' => [
-                'pending' => $user->expenseReports()->draft()->count(),
-                'submitted' => $user->expenseReports()->submitted()->count(),
-                'approved' => $user->expenseReports()->approved()->count(),
-                'rejected' => $user->expenseReports()->rejected()->count(),
-                'total_month' => $user->expenseReports()
-                    ->whereMonth('created_at', now()->month)
-                    ->sum('total_amount'),
-            ],
-            'recent_reports' => $user->expenseReports()
-                ->with(['items', 'mileageExpenses'])
-                ->latest()
-                ->limit(5)
-                ->get(),
-        ]);
-    });
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard/trends', [DashboardController::class, 'trends']);
+    Route::get('/dashboard/category-breakdown', [DashboardController::class, 'categoryBreakdown']);
 });

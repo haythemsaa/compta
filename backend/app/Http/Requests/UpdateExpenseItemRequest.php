@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreExpenseItemRequest extends FormRequest
+class UpdateExpenseItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,12 @@ class StoreExpenseItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'expense_category_id' => ['required', 'exists:expense_categories,id'],
-            'date' => ['required', 'date', 'before_or_equal:today'],
-            'merchant_name' => ['required', 'string', 'max:255'],
+            'expense_category_id' => ['sometimes', 'exists:expense_categories,id'],
+            'date' => ['sometimes', 'date', 'before_or_equal:today'],
+            'merchant_name' => ['sometimes', 'string', 'max:255'],
             'merchant_vat_number' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'amount' => ['required', 'numeric', 'min:0', 'max:999999.999'],
+            'amount' => ['sometimes', 'numeric', 'min:0', 'max:999999.999'],
             'tva_rate' => ['nullable', 'numeric', 'in:0,7,13,19'],
             'currency' => ['nullable', 'string', 'size:3'],
             'exchange_rate' => ['nullable', 'numeric', 'min:0'],
@@ -43,12 +43,8 @@ class StoreExpenseItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'expense_category_id.required' => 'La catégorie est obligatoire',
             'expense_category_id.exists' => 'La catégorie sélectionnée n\'existe pas',
-            'date.required' => 'La date est obligatoire',
             'date.before_or_equal' => 'La date ne peut pas être dans le futur',
-            'merchant_name.required' => 'Le nom du marchand est obligatoire',
-            'amount.required' => 'Le montant est obligatoire',
             'amount.min' => 'Le montant doit être positif',
             'tva_rate.in' => 'Le taux de TVA doit être 0%, 7%, 13% ou 19%',
         ];
