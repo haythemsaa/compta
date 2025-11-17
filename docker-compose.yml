@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: expensya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: expensya_tunisia
+      POSTGRES_USER: expensya
+      POSTGRES_PASSWORD: expensya_secure_2025
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - expensya-network
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: expensya-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass expensya_redis_2025
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - expensya-network
+
+  # Laravel Backend (PHP-FPM + Nginx)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: expensya-backend
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+      - ./backend/storage:/var/www/storage
+      - ./backend/bootstrap/cache:/var/www/bootstrap/cache
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: expensya_tunisia
+      DB_USERNAME: expensya
+      DB_PASSWORD: expensya_secure_2025
+      REDIS_HOST: redis
+      REDIS_PASSWORD: expensya_redis_2025
+      REDIS_PORT: 6379
+    networks:
+      - expensya-network
+
+  # Vue.js Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: expensya-frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    networks:
+      - expensya-network
+
+  # Mailhog (Email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: expensya-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - expensya-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  expensya-network:
+    driver: bridge
