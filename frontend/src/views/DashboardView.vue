@@ -3,7 +3,7 @@
     <nav class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
-          <h1 class="text-2xl font-bold text-primary-600">Expensya TN</h1>
+          <h1 class="text-2xl font-bold text-primary-600">Compteo TN</h1>
           <div class="flex items-center space-x-4">
             <router-link to="/expenses/new" class="btn-primary">
               + Nouvelle note de frais

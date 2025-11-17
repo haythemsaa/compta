@@ -4,39 +4,39 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: expensya-postgres
+    container_name: compteo-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: expensya_tunisia
-      POSTGRES_USER: expensya
-      POSTGRES_PASSWORD: expensya_secure_2025
+      POSTGRES_DB: compteo_tunisia
+      POSTGRES_USER: compteo
+      POSTGRES_PASSWORD: compteo_secure_2025
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - expensya-network
+      - compteo-network
 
   # Redis Cache & Queue
   redis:
     image: redis:7-alpine
-    container_name: expensya-redis
+    container_name: compteo-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass expensya_redis_2025
+    command: redis-server --appendonly yes --requirepass compteo_redis_2025
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - expensya-network
+      - compteo-network
 
   # Laravel Backend (PHP-FPM + Nginx)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: expensya-backend
+    container_name: compteo-backend
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -52,21 +52,21 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: expensya_tunisia
-      DB_USERNAME: expensya
-      DB_PASSWORD: expensya_secure_2025
+      DB_DATABASE: compteo_tunisia
+      DB_USERNAME: compteo
+      DB_PASSWORD: compteo_secure_2025
       REDIS_HOST: redis
-      REDIS_PASSWORD: expensya_redis_2025
+      REDIS_PASSWORD: compteo_redis_2025
       REDIS_PORT: 6379
     networks:
-      - expensya-network
+      - compteo-network
 
   # Vue.js Frontend (Development)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: expensya-frontend
+    container_name: compteo-frontend
     restart: unless-stopped
     working_dir: /app
     volumes:
@@ -77,18 +77,18 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000/api
     networks:
-      - expensya-network
+      - compteo-network
 
   # Mailhog (Email testing)
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: expensya-mailhog
+    container_name: compteo-mailhog
     restart: unless-stopped
     ports:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
     networks:
-      - expensya-network
+      - compteo-network
 
 volumes:
   postgres_data:
@@ -97,5 +97,5 @@ volumes:
     driver: local
 
 networks:
-  expensya-network:
+  compteo-network:
     driver: bridge

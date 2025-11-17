@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
     <div class="text-center">
       <h1 class="text-6xl font-bold text-primary-900 mb-4">
-        Expensya Tunisie
+        Compteo Tunisie
       </h1>
       <p class="text-xl text-gray-700 mb-8">
         Solution SaaS de Gestion Automatisée des Notes de Frais

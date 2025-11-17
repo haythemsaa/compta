@@ -1,4 +1,4 @@
-# 🇹🇳 Expensya Tunisia - Gestion Automatisée des Notes de Frais
+# 🇹🇳 Compteo Tunisia - Gestion Automatisée des Notes de Frais
 
 [![License](https://img.shields.io/badge/license-Proprietary-blue.svg)](LICENSE)
 [![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
@@ -115,8 +115,8 @@ cd backend && cp .env.example .env && php artisan key:generate && cd ..
 docker-compose up -d
 
 # 4. Initialiser la base de données
-docker exec -it expensya-backend php artisan migrate
-docker exec -it expensya-backend php artisan db:seed
+docker exec -it compteo-backend php artisan migrate
+docker exec -it compteo-backend php artisan db:seed
 
 # 5. Accéder à l'application
 # Frontend: http://localhost:3000
@@ -125,7 +125,7 @@ docker exec -it expensya-backend php artisan db:seed
 ```
 
 ### Compte de Test
-- **Email**: demo@expensya.tn
+- **Email**: demo@compteo.tn
 - **Mot de passe**: demo
 
 ## 📚 Documentation
@@ -162,7 +162,7 @@ docker exec -it expensya-backend php artisan db:seed
 ## 🤝 Contribution
 
 Ce projet est actuellement en développement privé. Pour toute question:
-- Email: dev@expensya-tn.com
+- Email: dev@compteo.tn
 - Issues: https://github.com/haythemsaa/compta/issues
 
 ## 📊 KPIs de Succès
@@ -183,11 +183,11 @@ Ce projet est actuellement en développement privé. Pour toute question:
 
 ## 📄 Licence
 
-© 2025 Expensya Tunisia - Tous droits réservés
+© 2025 Compteo Tunisia - Tous droits réservés
 Document confidentiel - Ne pas diffuser
 
 ---
 
 **Version**: 1.0.0
 **Date**: 17 Novembre 2025
-**Auteur**: Équipe Expensya TN
+**Auteur**: Équipe Compteo TN

@@ -1,7 +1,7 @@
 {
-  "name": "expensya-tunisia-frontend",
+  "name": "compteo-tunisia-frontend",
   "version": "1.0.0",
-  "description": "Expensya Tunisia - Frontend Web Application",
+  "description": "Compteo Tunisia - Frontend Web Application",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,8 +1,8 @@
-# Architecture Technique - Expensya Tunisia
+# Architecture Technique - Compteo Tunisia
 
 ## Vue d'ensemble
 
-Expensya Tunisia est une solution SaaS de gestion automatisée des notes de frais, conçue spécifiquement pour le marché tunisien avec une conformité totale aux réglementations fiscales et comptables locales.
+Compteo Tunisia est une solution SaaS de gestion automatisée des notes de frais, conçue spécifiquement pour le marché tunisien avec une conformité totale aux réglementations fiscales et comptables locales.
 
 ## Stack Technologique
 

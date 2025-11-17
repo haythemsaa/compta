@@ -1,4 +1,4 @@
-# Guide d'Installation - Expensya Tunisia
+# Guide d'Installation - Compteo Tunisia
 
 ## Prérequis
 
@@ -46,7 +46,7 @@ docker-compose ps
 
 ```bash
 # Accéder au conteneur backend
-docker exec -it expensya-backend sh
+docker exec -it compteo-backend sh
 
 # Exécuter les migrations
 php artisan migrate
@@ -62,7 +62,7 @@ exit
 
 ```bash
 # Accéder au conteneur frontend
-docker exec -it expensya-frontend sh
+docker exec -it compteo-frontend sh
 
 # Les dépendances sont déjà installées, mais vous pouvez les réinstaller
 npm install
@@ -138,7 +138,7 @@ brew install tesseract tesseract-lang
 ## Comptes de Test
 
 ### Connexion Demo
-- **Email**: demo@expensya.tn
+- **Email**: demo@compteo.tn
 - **Mot de passe**: demo
 
 ## Commandes Utiles
@@ -163,7 +163,7 @@ docker-compose logs -f backend
 
 ```bash
 # Accéder au conteneur
-docker exec -it expensya-backend sh
+docker exec -it compteo-backend sh
 
 # Exécuter les migrations
 php artisan migrate
@@ -187,7 +187,7 @@ php artisan route:clear
 
 ```bash
 # Accéder au conteneur
-docker exec -it expensya-frontend sh
+docker exec -it compteo-frontend sh
 
 # Build de production
 npm run build
@@ -215,7 +215,7 @@ sudo lsof -i :5432
 ### Erreur: Permission denied (storage Laravel)
 
 ```bash
-docker exec -it expensya-backend sh
+docker exec -it compteo-backend sh
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 ```
@@ -238,14 +238,14 @@ docker-compose logs postgres
 ### Backend (PHPUnit)
 
 ```bash
-docker exec -it expensya-backend sh
+docker exec -it compteo-backend sh
 php artisan test
 ```
 
 ### Frontend (Vitest)
 
 ```bash
-docker exec -it expensya-frontend sh
+docker exec -it compteo-frontend sh
 npm run test
 ```
 
@@ -254,4 +254,4 @@ npm run test
 Pour toute question ou problème:
 - Documentation complète: `docs/`
 - Issues GitHub: https://github.com/haythemsaa/compta/issues
-- Email: dev@expensya-tn.com
+- Email: dev@compteo.tn

@@ -3,7 +3,7 @@
     <div class="max-w-md w-full space-y-8">
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Expensya Tunisie
+          Compteo Tunisie
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600">
           Connectez-vous à votre compte
@@ -83,7 +83,7 @@ const handleLogin = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     // Demo credentials
-    if (email.value === 'demo@expensya.tn' && password.value === 'demo') {
+    if (email.value === 'demo@compteo.tn' && password.value === 'demo') {
       localStorage.setItem('auth_token', 'demo_token')
       router.push('/dashboard')
     } else {

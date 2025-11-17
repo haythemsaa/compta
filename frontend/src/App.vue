@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-// Expensya Tunisia - Main App Component
+// Compteo Tunisia - Main App Component
 </script>
 
 <style>

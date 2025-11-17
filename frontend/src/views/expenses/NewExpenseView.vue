@@ -4,7 +4,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
           <router-link to="/dashboard" class="text-2xl font-bold text-primary-600">
-            Expensya TN
+            Compteo TN
           </router-link>
         </div>
       </div>
