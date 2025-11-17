@@ -1,11 +1,12 @@
 <template>
-  <div class="expense-reports-view">
-    <div class="header">
-      <h1>Rapports de frais</h1>
-      <button @click="createReport" class="btn btn-primary">
-        Nouveau rapport
-      </button>
-    </div>
+  <AppLayout>
+    <div class="expense-reports-view">
+      <div class="header">
+        <h1>Rapports de frais</h1>
+        <button @click="createReport" class="btn btn-primary">
+          Nouveau rapport
+        </button>
+      </div>
 
     <div class="filters">
       <select v-model="statusFilter" @change="loadReports" class="filter-select">
@@ -59,7 +60,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
@@ -67,6 +68,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
 import type { ExpenseReport } from '../types'
+import AppLayout from '../components/AppLayout.vue'
 
 const router = useRouter()
 const loading = ref(false)

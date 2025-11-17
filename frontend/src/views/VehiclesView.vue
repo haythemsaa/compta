@@ -1,11 +1,12 @@
 <template>
-  <div class="vehicles-view">
-    <div class="header">
-      <h1>Mes véhicules</h1>
-      <button @click="addVehicle" class="btn btn-primary">
-        + Ajouter un véhicule
-      </button>
-    </div>
+  <AppLayout>
+    <div class="vehicles-view">
+      <div class="header">
+        <h1>Mes véhicules</h1>
+        <button @click="addVehicle" class="btn btn-primary">
+          + Ajouter un véhicule
+        </button>
+      </div>
 
     <div v-if="loading" class="loading">Chargement...</div>
 
@@ -47,13 +48,14 @@
         </button>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../services/api'
 import type { Vehicle } from '../types'
+import AppLayout from '../components/AppLayout.vue'
 
 const loading = ref(false)
 const error = ref('')

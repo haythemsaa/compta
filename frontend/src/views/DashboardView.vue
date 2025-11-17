@@ -1,28 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-          <h1 class="text-2xl font-bold text-primary-600">Compteo TN</h1>
-          <div class="flex items-center space-x-4">
-            <router-link to="/expense-reports" class="text-gray-600 hover:text-gray-900">
-              Rapports de frais
-            </router-link>
-            <router-link to="/vehicles" class="text-gray-600 hover:text-gray-900">
-              Véhicules
-            </router-link>
-            <router-link to="/expense-reports/new" class="btn-primary">
-              + Nouveau rapport
-            </router-link>
-            <button @click="logout" class="text-gray-600 hover:text-gray-900">
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <AppLayout>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div v-if="loading" class="text-center py-12">Chargement...</div>
 
       <div v-else>
@@ -96,17 +74,16 @@
           </div>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import api from '../services/api'
 import type { DashboardStats, ExpenseReport, CategoryBreakdown } from '../types'
+import AppLayout from '../components/AppLayout.vue'
 
-const router = useRouter()
 const loading = ref(true)
 
 const stats = ref<DashboardStats>({
@@ -137,11 +114,6 @@ const loadDashboard = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const logout = () => {
-  localStorage.removeItem('auth_token')
-  router.push('/login')
 }
 
 const formatAmount = (amount: number): string => {
