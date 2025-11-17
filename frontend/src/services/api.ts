@@ -73,7 +73,7 @@ class ApiService {
   }
 
   // Expense reports endpoints
-  expenses = {
+  expenseReports = {
     list: (params?: any) => this.get('/expense-reports', { params }),
     get: (id: number) => this.get(`/expense-reports/${id}`),
     create: (data: any) => this.post('/expense-reports', data),
@@ -82,27 +82,71 @@ class ApiService {
     submit: (id: number) => this.post(`/expense-reports/${id}/submit`),
     approve: (id: number) => this.post(`/expense-reports/${id}/approve`),
     reject: (id: number, reason: string) =>
-      this.post(`/expense-reports/${id}/reject`, { reason })
+      this.post(`/expense-reports/${id}/reject`, { reason }),
+    pay: (id: number) => this.post(`/expense-reports/${id}/pay`)
   }
 
-  // OCR endpoints
-  ocr = {
-    process: (file: File) => {
+  // Expense items endpoints
+  expenseItems = {
+    list: (reportId: number) => this.get(`/expense-reports/${reportId}/items`),
+    get: (id: number) => this.get(`/expense-items/${id}`),
+    create: (reportId: number, data: any) =>
+      this.post(`/expense-reports/${reportId}/items`, data),
+    update: (id: number, data: any) => this.put(`/expense-items/${id}`, data),
+    delete: (id: number) => this.delete(`/expense-items/${id}`)
+  }
+
+  // Expense categories endpoints
+  categories = {
+    list: (params?: any) => this.get('/expense-categories', { params }),
+    get: (id: number) => this.get(`/expense-categories/${id}`)
+  }
+
+  // Vehicles endpoints
+  vehicles = {
+    list: (params?: any) => this.get('/vehicles', { params }),
+    get: (id: number) => this.get(`/vehicles/${id}`),
+    create: (data: any) => this.post('/vehicles', data),
+    update: (id: number, data: any) => this.put(`/vehicles/${id}`, data),
+    delete: (id: number) => this.delete(`/vehicles/${id}`),
+    getMileageRate: (id: number, annualKm?: number) =>
+      this.get(`/vehicles/${id}/mileage-rate`, { params: { annual_km: annualKm } })
+  }
+
+  // Mileage expenses endpoints
+  mileageExpenses = {
+    list: (reportId: number) => this.get(`/expense-reports/${reportId}/mileage-expenses`),
+    get: (id: number) => this.get(`/mileage-expenses/${id}`),
+    create: (reportId: number, data: any) =>
+      this.post(`/expense-reports/${reportId}/mileage-expenses`, data),
+    update: (id: number, data: any) => this.put(`/mileage-expenses/${id}`, data),
+    delete: (id: number) => this.delete(`/mileage-expenses/${id}`),
+    calculateDistance: (start: string, end: string) =>
+      this.post('/mileage/calculate-distance', { start_location: start, end_location: end })
+  }
+
+  // Media endpoints
+  media = {
+    upload: (file: File, mediableType: string, mediableId: number) => {
       const formData = new FormData()
       formData.append('file', file)
-      return this.post('/ocr/process', formData, {
+      formData.append('mediable_type', mediableType)
+      formData.append('mediable_id', mediableId.toString())
+      return this.post('/media/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
     },
-    status: (id: string) => this.get(`/ocr/status/${id}`)
+    get: (id: number) => this.get(`/media/${id}`),
+    download: (id: number) => this.get(`/media/${id}/download`, { responseType: 'blob' }),
+    delete: (id: number) => this.delete(`/media/${id}`),
+    processOcr: (id: number) => this.post(`/media/${id}/ocr`)
   }
 
-  // Mileage endpoints
-  mileage = {
-    calculateDistance: (start: string, end: string) =>
-      this.post('/mileage/calculate-distance', { start_location: start, end_location: end }),
-    rates: () => this.get('/mileage/rates'),
-    create: (data: any) => this.post('/mileage/expenses', data)
+  // Dashboard endpoints
+  dashboard = {
+    stats: () => this.get('/dashboard'),
+    trends: (months?: number) => this.get('/dashboard/trends', { params: { months } }),
+    categoryBreakdown: () => this.get('/dashboard/category-breakdown')
   }
 }
 

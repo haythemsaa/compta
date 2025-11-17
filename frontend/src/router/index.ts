@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('../views/HomeView.vue')
+    redirect: '/dashboard'
   },
   {
     path: '/login',
@@ -19,15 +19,21 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/expenses',
-    name: 'Expenses',
-    component: () => import('../views/expenses/ExpensesListView.vue'),
+    path: '/expense-reports',
+    name: 'ExpenseReports',
+    component: () => import('../views/ExpenseReportsView.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/expenses/new',
-    name: 'NewExpense',
-    component: () => import('../views/expenses/NewExpenseView.vue'),
+    path: '/expense-reports/:id',
+    name: 'ExpenseReportDetail',
+    component: () => import('../views/ExpenseReportDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vehicles',
+    name: 'Vehicles',
+    component: () => import('../views/VehiclesView.vue'),
     meta: { requiresAuth: true }
   }
 ]
