@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseReportController;
 use App\Http\Controllers\Api\ExpenseItemController;
 use App\Http\Controllers\Api\VehicleController;
@@ -29,6 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Expense Items
     Route::apiResource('expense-reports.items', ExpenseItemController::class)->shallow();
+
+    // Expense Categories
+    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index']);
+    Route::get('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'show']);
 
     // Vehicles
     Route::apiResource('vehicles', VehicleController::class);
