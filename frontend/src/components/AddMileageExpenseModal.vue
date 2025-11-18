@@ -1,140 +1,237 @@
 <template>
-  <Teleport to="body">
-    <div v-if="isOpen" class="modal-overlay" @click.self="close">
-      <div class="modal-container">
-        <div class="modal-header">
-          <h2>Ajouter un frais kilométrique</h2>
-          <button @click="close" class="close-button">×</button>
+  <!-- Bootstrap Modal -->
+  <div
+    v-if="isOpen"
+    class="modal fade show d-block"
+    tabindex="-1"
+    style="background-color: rgba(0, 0, 0, 0.5)"
+    @click.self="close"
+  >
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-content animate__animated animate__zoomIn animate__faster">
+        <!-- Modal Header -->
+        <div class="modal-header bg-gradient-primary text-white">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-car-front me-2"></i>
+            Ajouter un frais kilométrique
+          </h5>
+          <button type="button" class="btn-close btn-close-white" @click="close"></button>
         </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
-
-        <form @submit.prevent="submit" class="modal-body">
-          <div class="form-group">
-            <label>Véhicule *</label>
-            <select v-model="formData.vehicle_id" required class="form-control">
-              <option value="">Sélectionnez un véhicule</option>
-              <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
-                {{ vehicle.name }} ({{ vehicle.fiscal_power }} CV)
-              </option>
-            </select>
-            <p v-if="selectedVehicle" class="text-xs text-gray-500 mt-1">
-              Tarif estimé: {{ estimatedRate }} TND/km
-            </p>
+        <!-- Modal Body -->
+        <div class="modal-body p-4">
+          <!-- Error Alert -->
+          <div v-if="error" class="alert alert-danger animate__animated animate__shakeX" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error }}
           </div>
 
-          <div class="form-group">
-            <label>Date *</label>
-            <input
-              v-model="formData.date"
-              type="date"
-              required
-              :max="today"
-              class="form-control"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Lieu de départ *</label>
-            <input
-              v-model="formData.start_location"
-              type="text"
-              required
-              class="form-control"
-              placeholder="Ex: Tunis"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Lieu d'arrivée *</label>
-            <input
-              v-model="formData.end_location"
-              type="text"
-              required
-              class="form-control"
-              placeholder="Ex: Sfax"
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Distance (km) *</label>
-              <div class="input-group">
-                <input
-                  v-model.number="formData.distance_km"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  required
-                  class="form-control"
-                  placeholder="272"
-                />
-                <button
-                  type="button"
-                  @click="calculateDistance"
-                  :disabled="calculating || !formData.start_location || !formData.end_location"
-                  class="btn-calculate"
+          <form @submit.prevent="submit">
+            <!-- Vehicle Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-car-front-fill me-2"></i>
+                Véhicule <span class="text-danger">*</span>
+              </label>
+              <select
+                v-model="formData.vehicle_id"
+                class="form-select form-select-lg"
+                required
+                @change="updateMileageRate"
+              >
+                <option value="">Sélectionnez un véhicule</option>
+                <option
+                  v-for="vehicle in vehicles"
+                  :key="vehicle.id"
+                  :value="vehicle.id"
                 >
-                  {{ calculating ? '...' : '🔍' }}
-                </button>
+                  {{ vehicle.name }} - {{ vehicle.registration_number }} ({{ vehicle.fiscal_power }} CV)
+                </option>
+              </select>
+              <div v-if="selectedVehicle" class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                {{ selectedVehicle.brand }} {{ selectedVehicle.model }} - Puissance fiscale: {{ selectedVehicle.fiscal_power }} CV
               </div>
             </div>
-            <div class="form-group">
-              <label class="checkbox-label">
+
+            <!-- Date and Purpose Row -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar-event me-2"></i>
+                  Date <span class="text-danger">*</span>
+                </label>
+                <input
+                  v-model="formData.date"
+                  type="date"
+                  class="form-control"
+                  required
+                  :max="today"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-briefcase me-2"></i>
+                  Objet du déplacement <span class="text-danger">*</span>
+                </label>
+                <input
+                  v-model="formData.purpose"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ex: Visite client"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Start and End Location -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-geo-alt me-2"></i>
+                  Lieu de départ <span class="text-danger">*</span>
+                </label>
+                <input
+                  v-model="formData.start_location"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ex: Tunis"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-geo-fill me-2"></i>
+                  Lieu d'arrivée <span class="text-danger">*</span>
+                </label>
+                <input
+                  v-model="formData.end_location"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ex: Sfax"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Distance Calculation -->
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">
+                  <i class="bi bi-speedometer me-2"></i>
+                  Distance (km) <span class="text-danger">*</span>
+                </label>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  @click="calculateDistance"
+                  :disabled="!formData.start_location || !formData.end_location || calculating"
+                >
+                  <span v-if="calculating">
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Calcul...
+                  </span>
+                  <span v-else>
+                    <i class="bi bi-calculator me-1"></i>
+                    Calculer la distance
+                  </span>
+                </button>
+              </div>
+              <input
+                v-model.number="formData.distance_km"
+                type="number"
+                step="0.1"
+                min="0"
+                class="form-control"
+                placeholder="0.0"
+                required
+              />
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Cliquez sur "Calculer" pour estimer automatiquement la distance
+              </div>
+            </div>
+
+            <!-- Round Trip -->
+            <div class="mb-4">
+              <div class="form-check form-switch">
                 <input
                   v-model="formData.round_trip"
+                  class="form-check-input"
                   type="checkbox"
-                  class="checkbox"
+                  id="roundTrip"
+                  style="cursor: pointer; width: 3rem; height: 1.5rem"
                 />
-                <span>Aller-retour</span>
-              </label>
+                <label class="form-check-label fw-semibold" for="roundTrip" style="cursor: pointer">
+                  <i class="bi bi-arrow-left-right me-2"></i>
+                  Aller-retour
+                </label>
+              </div>
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Active cette option pour doubler automatiquement la distance
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Objet du déplacement *</label>
-            <input
-              v-model="formData.purpose"
-              type="text"
-              required
-              class="form-control"
-              placeholder="Ex: Visite client, réunion..."
-            />
-          </div>
+            <!-- Description -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-pencil me-2"></i>
+                Description
+              </label>
+              <textarea
+                v-model="formData.description"
+                class="form-control"
+                rows="3"
+                placeholder="Détails supplémentaires du déplacement..."
+              ></textarea>
+            </div>
 
-          <div class="form-group">
-            <label>Description (facultatif)</label>
-            <textarea
-              v-model="formData.description"
-              class="form-control"
-              rows="2"
-              placeholder="Détails supplémentaires..."
-            ></textarea>
-          </div>
+            <!-- Estimated Amount Card -->
+            <div v-if="estimatedAmount" class="alert alert-info d-flex align-items-center">
+              <i class="bi bi-calculator-fill fs-3 me-3"></i>
+              <div class="flex-grow-1">
+                <div class="fw-semibold">Montant estimé</div>
+                <div class="fs-4 fw-bold text-primary">{{ estimatedAmount }} TND</div>
+                <div class="small">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Barème: {{ estimatedRate?.toFixed(3) }} TND/km
+                  <span v-if="formData.round_trip"> • Distance totale: {{ formData.distance_km * 2 }} km</span>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
 
-          <div v-if="estimatedAmount" class="estimated-total">
-            <span>Montant estimé:</span>
-            <strong>{{ estimatedAmount }} TND</strong>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" @click="close" class="btn btn-secondary">
-              Annuler
-            </button>
-            <button type="submit" :disabled="saving" class="btn btn-primary">
-              {{ saving ? 'Enregistrement...' : 'Ajouter' }}
-            </button>
-          </div>
-        </form>
+        <!-- Modal Footer -->
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" @click="close" :disabled="saving">
+            <i class="bi bi-x-circle me-2"></i>
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            @click="submit"
+            :disabled="saving"
+          >
+            <span v-if="saving">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Enregistrement...
+            </span>
+            <span v-else>
+              <i class="bi bi-check-circle me-2"></i>
+              Ajouter le frais
+            </span>
+          </button>
+        </div>
       </div>
     </div>
-  </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import api from '../services/api'
 import type { Vehicle } from '../types'
 
@@ -155,11 +252,13 @@ const saving = ref(false)
 const calculating = ref(false)
 const error = ref('')
 const vehicles = ref<Vehicle[]>([])
-const estimatedRate = ref<number>(0.29)
+const estimatedRate = ref<number | null>(null)
+
+const today = computed(() => new Date().toISOString().split('T')[0])
 
 const formData = ref({
   vehicle_id: '',
-  date: new Date().toISOString().split('T')[0],
+  date: today.value,
   start_location: '',
   end_location: '',
   distance_km: 0,
@@ -167,8 +266,6 @@ const formData = ref({
   purpose: '',
   description: ''
 })
-
-const today = computed(() => new Date().toISOString().split('T')[0])
 
 const selectedVehicle = computed(() => {
   return vehicles.value.find(v => v.id === Number(formData.value.vehicle_id))
@@ -182,10 +279,24 @@ const estimatedAmount = computed(() => {
 
 const loadVehicles = async () => {
   try {
-    const response: any = await api.vehicles.list({ active: true })
+    const response: any = await api.vehicles.list()
     vehicles.value = response.data || []
   } catch (err) {
     console.error('Error loading vehicles:', err)
+  }
+}
+
+const updateMileageRate = async () => {
+  if (!formData.value.vehicle_id) {
+    estimatedRate.value = null
+    return
+  }
+
+  try {
+    const response: any = await api.vehicles.getMileageRate(Number(formData.value.vehicle_id), 5000)
+    estimatedRate.value = response.rate
+  } catch (err) {
+    console.error('Error getting mileage rate:', err)
   }
 }
 
@@ -206,17 +317,6 @@ const calculateDistance = async () => {
   }
 }
 
-const updateMileageRate = async () => {
-  if (!formData.value.vehicle_id) return
-
-  try {
-    const rate: any = await api.vehicles.getMileageRate(Number(formData.value.vehicle_id), 5000)
-    estimatedRate.value = rate.rate
-  } catch (err) {
-    console.error('Error getting mileage rate:', err)
-  }
-}
-
 const submit = async () => {
   saving.value = true
   error.value = ''
@@ -232,14 +332,16 @@ const submit = async () => {
 }
 
 const close = () => {
-  emit('close')
-  resetForm()
+  if (!saving.value) {
+    emit('close')
+    resetForm()
+  }
 }
 
 const resetForm = () => {
   formData.value = {
     vehicle_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: today.value,
     start_location: '',
     end_location: '',
     distance_km: 0,
@@ -247,218 +349,35 @@ const resetForm = () => {
     purpose: '',
     description: ''
   }
+  estimatedRate.value = null
   error.value = ''
 }
 
-watch(() => formData.value.vehicle_id, () => {
-  if (formData.value.vehicle_id) {
-    updateMileageRate()
-  }
-})
-
 watch(() => props.isOpen, (newVal) => {
-  if (newVal && vehicles.value.length === 0) {
-    loadVehicles()
-  }
-})
-
-onMounted(() => {
-  if (props.isOpen) {
+  if (newVal) {
     loadVehicles()
   }
 })
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 0.75rem;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.close-button {
-  font-size: 2rem;
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-button:hover {
-  color: #1f2937;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 1rem;
-}
-
-.error-message {
-  background-color: #fee2e2;
-  color: #991b1b;
-  padding: 0.75rem 1.5rem;
-  border-left: 4px solid #dc2626;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
+.modal {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.875rem;
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
 }
 
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+.form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
-.form-control:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-calculate {
-  padding: 0.75rem;
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-calculate:hover:not(:disabled) {
-  background-color: #e5e7eb;
-}
-
-.btn-calculate:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  padding-top: 2rem;
-}
-
-.checkbox {
-  width: 1.25rem;
-  height: 1.25rem;
-  cursor: pointer;
-}
-
-.estimated-total {
-  background-color: #f0f9ff;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  border: 1px solid #bfdbfe;
-}
-
-.estimated-total strong {
-  font-size: 1.125rem;
-  color: #1e40af;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.btn-secondary:hover {
-  background-color: #d1d5db;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* Animation */
+.animate__faster {
+  animation-duration: 0.4s !important;
 }
 </style>
