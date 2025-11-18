@@ -1,83 +1,70 @@
 <template>
-  <div :class="['loading-container', size]">
-    <div class="spinner"></div>
-    <p v-if="message" class="loading-message">{{ message }}</p>
+  <div :class="['loading-container', `loading-${size}`, centered ? 'text-center' : '']">
+    <div :class="['spinner-border', `text-${variant}`, sizeClass]" role="status">
+      <span class="visually-hidden">{{ message }}</span>
+    </div>
+    <p v-if="showMessage && message" :class="['loading-message', `text-${variant}`, 'mt-3']">
+      {{ message }}
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface Props {
   size?: 'sm' | 'md' | 'lg'
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info'
   message?: string
+  showMessage?: boolean
+  centered?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   size: 'md',
-  message: 'Chargement...'
+  variant: 'primary',
+  message: 'Chargement...',
+  showMessage: true,
+  centered: true
+})
+
+const sizeClass = computed(() => {
+  const sizes = {
+    sm: '',
+    md: 'spinner-lg',
+    lg: 'spinner-xl'
+  }
+  return sizes[props.size]
 })
 </script>
 
 <style scoped>
 .loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   padding: 2rem;
 }
 
-.loading-container.sm {
+.loading-container.loading-sm {
   padding: 1rem;
 }
 
-.loading-container.lg {
+.loading-container.loading-lg {
   padding: 4rem;
 }
 
-.spinner {
-  border: 3px solid #e5e7eb;
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.spinner-lg {
+  width: 3rem;
+  height: 3rem;
+  border-width: 0.3rem;
 }
 
-.loading-container.sm .spinner {
-  width: 24px;
-  height: 24px;
-  border-width: 2px;
-}
-
-.loading-container.md .spinner {
-  width: 40px;
-  height: 40px;
-  border-width: 3px;
-}
-
-.loading-container.lg .spinner {
-  width: 56px;
-  height: 56px;
-  border-width: 4px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.spinner-xl {
+  width: 4rem;
+  height: 4rem;
+  border-width: 0.4rem;
 }
 
 .loading-message {
-  margin-top: 1rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.loading-container.sm .loading-message {
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.loading-container.lg .loading-message {
-  font-size: 1rem;
-  margin-top: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 0;
 }
 </style>
