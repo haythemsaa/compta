@@ -1,201 +1,360 @@
 <template>
   <AppLayout>
-    <div class="expense-report-detail">
-      <div class="header">
-        <div>
-          <h1>{{ isNew ? 'Nouveau rapport de frais' : report?.title }}</h1>
-          <p v-if="!isNew" class="reference">
-            {{ report?.reference }}
-            <span :class="['status-badge', `status-${report?.status}`]">
-              {{ getStatusLabel(report?.status) }}
-            </span>
-          </p>
-        </div>
-        <div class="actions">
-          <button @click="goBack" class="btn btn-secondary">Retour</button>
+    <!-- Page Header with Actions -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                  <router-link to="/expense-reports">Rapports de frais</router-link>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                  {{ isNew ? 'Nouveau rapport' : report?.reference }}
+                </li>
+              </ol>
+            </nav>
+            <h1 class="display-6 fw-bold mb-2">
+              {{ isNew ? 'Nouveau rapport de frais' : report?.title }}
+            </h1>
+            <div v-if="!isNew && report" class="d-flex align-items-center gap-3">
+              <code class="text-primary fs-6">{{ report.reference }}</code>
+              <span :class="['badge', 'fs-6', getStatusClass(report.status)]">
+                {{ getStatusLabel(report.status) }}
+              </span>
+            </div>
+          </div>
 
-          <!-- Draft actions -->
-          <button
-            v-if="report?.status === 'draft'"
-            @click="saveReport"
-            class="btn btn-primary"
-            :disabled="saving"
-          >
-            {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
-          </button>
-          <button
-            v-if="report?.status === 'draft' && !isNew"
-            @click="submitReport"
-            class="btn btn-success"
-            :disabled="submitting"
-          >
-            {{ submitting ? 'Soumission...' : 'Soumettre' }}
-          </button>
+          <!-- Action Buttons -->
+          <div class="btn-group" role="group">
+            <button @click="goBack" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-2"></i>
+              Retour
+            </button>
 
-          <!-- Manager actions -->
-          <button
-            v-if="report?.status === 'submitted' && canApprove"
-            @click="approveReport"
-            class="btn btn-success"
-            :disabled="approving"
-          >
-            {{ approving ? 'Approbation...' : '✓ Approuver' }}
-          </button>
-          <button
-            v-if="report?.status === 'submitted' && canApprove"
-            @click="showRejectModal = true"
-            class="btn btn-danger"
-          >
-            ✗ Rejeter
-          </button>
+            <!-- Draft Actions -->
+            <template v-if="report?.status === 'draft'">
+              <button
+                @click="saveReport"
+                class="btn btn-primary"
+                :disabled="saving"
+              >
+                <span v-if="saving">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Enregistrement...
+                </span>
+                <span v-else>
+                  <i class="bi bi-save me-2"></i>
+                  Enregistrer
+                </span>
+              </button>
+              <button
+                v-if="!isNew"
+                @click="submitReport"
+                class="btn btn-success"
+                :disabled="submitting"
+              >
+                <span v-if="submitting">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Soumission...
+                </span>
+                <span v-else>
+                  <i class="bi bi-send me-2"></i>
+                  Soumettre
+                </span>
+              </button>
+            </template>
+
+            <!-- Manager Actions -->
+            <template v-if="report?.status === 'submitted' && canApprove">
+              <button
+                @click="approveReport"
+                class="btn btn-success"
+                :disabled="approving"
+              >
+                <span v-if="approving">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Approbation...
+                </span>
+                <span v-else>
+                  <i class="bi bi-check-circle me-2"></i>
+                  Approuver
+                </span>
+              </button>
+              <button
+                @click="showRejectModal = true"
+                class="btn btn-danger"
+              >
+                <i class="bi bi-x-circle me-2"></i>
+                Rejeter
+              </button>
+            </template>
+          </div>
         </div>
       </div>
+    </div>
 
-      <div v-if="loading" class="loading">Chargement...</div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-3 text-muted">Chargement du rapport...</p>
+    </div>
 
-      <div v-else-if="error" class="error">{{ error }}</div>
+    <!-- Error State -->
+    <div v-else-if="error" class="alert alert-danger animate__animated animate__shakeX" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ error }}
+    </div>
 
-      <div v-else class="content">
-        <!-- Report Info -->
-        <div class="card">
-          <h2>Informations générales</h2>
-          <div class="form-group">
-            <label>Titre *</label>
-            <input
-              v-model="formData.title"
-              type="text"
-              :disabled="report?.status !== 'draft'"
-              class="form-control"
-              placeholder="Ex: Déplacement Tunis - Sfax"
-            />
+    <!-- Main Content -->
+    <div v-else>
+      <!-- Rejection Notice -->
+      <div
+        v-if="report?.status === 'rejected' && report.rejection_reason"
+        class="alert alert-danger animate__animated animate__fadeIn mb-4"
+      >
+        <h5 class="alert-heading">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          Rapport rejeté
+        </h5>
+        <hr />
+        <p class="mb-0">
+          <strong>Raison:</strong> {{ report.rejection_reason }}
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <!-- Left Column: Report Info -->
+        <div class="col-12 col-lg-4">
+          <!-- General Information Card -->
+          <div class="card mb-4 animate__animated animate__fadeInLeft">
+            <div class="card-header bg-gradient-primary text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Informations générales
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-pencil me-2"></i>
+                  Titre <span class="text-danger">*</span>
+                </label>
+                <input
+                  v-model="formData.title"
+                  type="text"
+                  class="form-control"
+                  :disabled="report?.status !== 'draft'"
+                  placeholder="Ex: Déplacement professionnel"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar-range me-2"></i>
+                  Période
+                </label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <input
+                      v-model="formData.period_start"
+                      type="date"
+                      class="form-control"
+                      :disabled="report?.status !== 'draft'"
+                    />
+                    <div class="form-text small">Début</div>
+                  </div>
+                  <div class="col-6">
+                    <input
+                      v-model="formData.period_end"
+                      type="date"
+                      class="form-control"
+                      :disabled="report?.status !== 'draft'"
+                    />
+                    <div class="form-text small">Fin</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-text-paragraph me-2"></i>
+                  Description
+                </label>
+                <textarea
+                  v-model="formData.description"
+                  class="form-control"
+                  rows="4"
+                  :disabled="report?.status !== 'draft'"
+                  placeholder="Mission, contexte, remarques..."
+                ></textarea>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea
-              v-model="formData.description"
-              :disabled="report?.status !== 'draft'"
-              class="form-control"
-              rows="3"
-              placeholder="Mission, contexte..."
-            />
-          </div>
 
-          <!-- Show rejection reason if rejected -->
-          <div v-if="report?.status === 'rejected' && report.rejection_reason" class="rejection-notice">
-            <strong>Raison du rejet:</strong> {{ report.rejection_reason }}
-          </div>
-        </div>
-
-        <!-- Expense Items -->
-        <div v-if="!isNew" class="card">
-          <div class="section-header">
-            <h2>Dépenses ({{ items.length }})</h2>
-            <button
-              v-if="report?.status === 'draft'"
-              @click="addExpenseItem"
-              class="btn btn-sm btn-primary"
-            >
-              + Ajouter une dépense
-            </button>
-          </div>
-
-          <div v-if="items.length === 0" class="empty-message">
-            Aucune dépense ajoutée
-          </div>
-
-          <div v-else class="items-list">
-            <div
-              v-for="item in items"
-              :key="item.id"
-              class="item-card"
-            >
-              <div class="item-header">
-                <span class="category-badge" :style="{ backgroundColor: item.category?.color }">
-                  {{ item.category?.icon }} {{ item.category?.name }}
+          <!-- Summary Card -->
+          <div v-if="!isNew" class="card animate__animated animate__fadeInLeft" style="animation-delay: 0.1s">
+            <div class="card-header bg-gradient-success text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-calculator me-2"></i>
+                Récapitulatif
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="summary-item">
+                <span class="label">Dépenses:</span>
+                <span class="value">{{ items.length }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Frais kilométriques:</span>
+                <span class="value">{{ mileageExpenses.length }}</span>
+              </div>
+              <hr />
+              <div class="summary-item total">
+                <span class="label">Total TTC:</span>
+                <span class="value text-primary fs-4 fw-bold">
+                  {{ formatAmount(report?.total_amount || 0) }} TND
                 </span>
-                <span class="item-amount">{{ formatAmount(item.amount) }} TND</span>
-              </div>
-              <div class="item-details">
-                <p><strong>{{ item.merchant_name }}</strong></p>
-                <p class="item-date">{{ formatDate(item.date) }}</p>
-                <p v-if="item.description" class="item-description">{{ item.description }}</p>
-              </div>
-              <div class="item-footer">
-                <span>HT: {{ formatAmount(item.amount_ht) }} TND</span>
-                <span>TVA {{ item.tva_rate }}%: {{ formatAmount(item.tva_amount) }} TND</span>
-                <button
-                  v-if="report?.status === 'draft'"
-                  @click="deleteItem(item.id)"
-                  class="btn btn-sm btn-danger"
-                >
-                  Supprimer
-                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Mileage Expenses -->
-        <div v-if="!isNew" class="card">
-          <div class="section-header">
-            <h2>Frais kilométriques ({{ mileageExpenses.length }})</h2>
-            <button
-              v-if="report?.status === 'draft'"
-              @click="addMileageExpense"
-              class="btn btn-sm btn-primary"
-            >
-              + Ajouter un trajet
-            </button>
-          </div>
-
-          <div v-if="mileageExpenses.length === 0" class="empty-message">
-            Aucun frais kilométrique ajouté
-          </div>
-
-          <div v-else class="items-list">
-            <div
-              v-for="mileage in mileageExpenses"
-              :key="mileage.id"
-              class="item-card"
-            >
-              <div class="item-header">
-                <span>🚗 {{ mileage.vehicle?.name }}</span>
-                <span class="item-amount">{{ formatAmount(mileage.total_amount) }} TND</span>
-              </div>
-              <div class="item-details">
-                <p><strong>{{ mileage.start_location }} → {{ mileage.end_location }}</strong></p>
-                <p class="item-date">{{ formatDate(mileage.date) }}</p>
-                <p>{{ mileage.distance_km }} km {{ mileage.round_trip ? '(Aller-retour)' : '' }}</p>
-                <p v-if="mileage.purpose" class="item-description">{{ mileage.purpose }}</p>
-              </div>
-              <div class="item-footer">
-                <span>Tarif: {{ mileage.rate_per_km }} TND/km</span>
+        <!-- Right Column: Expenses & Mileage -->
+        <div class="col-12 col-lg-8">
+          <!-- Expense Items Section -->
+          <div v-if="!isNew" class="card mb-4 animate__animated animate__fadeInRight">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="bi bi-receipt me-2"></i>
+                Dépenses ({{ items.length }})
+              </h5>
+              <button
+                v-if="report?.status === 'draft'"
+                @click="addExpenseItem"
+                class="btn btn-sm btn-primary"
+              >
+                <i class="bi bi-plus-circle me-2"></i>
+                Ajouter
+              </button>
+            </div>
+            <div class="card-body">
+              <!-- Empty State -->
+              <div v-if="items.length === 0" class="text-center py-4">
+                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                <p class="text-muted">Aucune dépense ajoutée</p>
                 <button
                   v-if="report?.status === 'draft'"
-                  @click="deleteMileageExpense(mileage.id)"
-                  class="btn btn-sm btn-danger"
+                  @click="addExpenseItem"
+                  class="btn btn-primary"
                 >
-                  Supprimer
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Ajouter votre première dépense
                 </button>
+              </div>
+
+              <!-- Expenses List -->
+              <div v-else class="list-group list-group-flush">
+                <div
+                  v-for="(item, index) in items"
+                  :key="item.id"
+                  class="list-group-item px-0 animate__animated animate__fadeIn"
+                  :style="`animation-delay: ${0.05 * index}s`"
+                >
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-items-center mb-2">
+                        <span class="category-icon me-2">{{ item.category?.icon }}</span>
+                        <h6 class="mb-0">{{ item.category?.name }}</h6>
+                      </div>
+                      <p class="mb-1 small text-muted">
+                        <i class="bi bi-shop me-1"></i>
+                        {{ item.merchant_name }}
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-calendar me-1"></i>
+                        {{ formatDate(item.date) }}
+                      </p>
+                      <p v-if="item.description" class="mb-0 small">{{ item.description }}</p>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-bold fs-5">{{ formatAmount(item.amount) }} TND</div>
+                      <small class="text-muted">TVA {{ item.tva_rate }}%</small>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Total -->
-        <div v-if="!isNew" class="card totals">
-          <h2>Total</h2>
-          <div class="total-row">
-            <span>Total HT:</span>
-            <span class="total-value">{{ formatAmount(report?.total_ht || 0) }} TND</span>
-          </div>
-          <div class="total-row">
-            <span>Total TVA:</span>
-            <span class="total-value">{{ formatAmount(report?.total_tva || 0) }} TND</span>
-          </div>
-          <div class="total-row total-final">
-            <span>Total TTC:</span>
-            <span class="total-value">{{ formatAmount(report?.total_amount || 0) }} TND</span>
+          <!-- Mileage Expenses Section -->
+          <div v-if="!isNew" class="card animate__animated animate__fadeInRight" style="animation-delay: 0.1s">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="bi bi-car-front me-2"></i>
+                Frais kilométriques ({{ mileageExpenses.length }})
+              </h5>
+              <button
+                v-if="report?.status === 'draft'"
+                @click="addMileageExpense"
+                class="btn btn-sm btn-primary"
+              >
+                <i class="bi bi-plus-circle me-2"></i>
+                Ajouter
+              </button>
+            </div>
+            <div class="card-body">
+              <!-- Empty State -->
+              <div v-if="mileageExpenses.length === 0" class="text-center py-4">
+                <i class="bi bi-car-front display-4 text-muted mb-3"></i>
+                <p class="text-muted">Aucun frais kilométrique ajouté</p>
+                <button
+                  v-if="report?.status === 'draft'"
+                  @click="addMileageExpense"
+                  class="btn btn-primary"
+                >
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Ajouter votre premier frais
+                </button>
+              </div>
+
+              <!-- Mileage List -->
+              <div v-else class="list-group list-group-flush">
+                <div
+                  v-for="(expense, index) in mileageExpenses"
+                  :key="expense.id"
+                  class="list-group-item px-0 animate__animated animate__fadeIn"
+                  :style="`animation-delay: ${0.05 * index}s`"
+                >
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-2">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        {{ expense.start_location }}
+                        <i class="bi bi-arrow-right mx-2"></i>
+                        {{ expense.end_location }}
+                      </h6>
+                      <p class="mb-1 small text-muted">
+                        <i class="bi bi-speedometer me-1"></i>
+                        {{ expense.distance_km }} km
+                        <span v-if="expense.round_trip" class="badge bg-info ms-2">Aller-retour</span>
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-calendar me-1"></i>
+                        {{ formatDate(expense.date) }}
+                      </p>
+                      <p v-if="expense.purpose" class="mb-0 small">{{ expense.purpose }}</p>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-bold fs-5">{{ formatAmount(expense.amount) }} TND</div>
+                      <small class="text-muted">{{ expense.rate }} TND/km</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -203,111 +362,142 @@
 
     <!-- Modals -->
     <AddExpenseItemModal
-      v-if="!isNew"
-      :is-open="showExpenseItemModal"
-      :report-id="reportId!"
-      @close="showExpenseItemModal = false"
-      @success="handleExpenseItemAdded"
+      :is-open="showExpenseModal"
+      :report-id="Number(reportId)"
+      @close="showExpenseModal = false"
+      @success="handleExpenseAdded"
     />
 
     <AddMileageExpenseModal
-      v-if="!isNew"
       :is-open="showMileageModal"
-      :report-id="reportId!"
+      :report-id="Number(reportId)"
       @close="showMileageModal = false"
       @success="handleMileageAdded"
     />
 
     <!-- Reject Modal -->
-    <Teleport to="body">
-      <div v-if="showRejectModal" class="modal-overlay" @click.self="showRejectModal = false">
-        <div class="modal-container">
-          <div class="modal-header">
-            <h2>Rejeter le rapport de frais</h2>
-            <button @click="showRejectModal = false" class="close-button">×</button>
+    <div
+      v-if="showRejectModal"
+      class="modal fade show d-block"
+      tabindex="-1"
+      style="background-color: rgba(0, 0, 0, 0.5)"
+      @click.self="showRejectModal = false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content animate__animated animate__zoomIn animate__faster">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="bi bi-x-circle me-2"></i>
+              Rejeter le rapport
+            </h5>
+            <button type="button" class="btn-close btn-close-white" @click="showRejectModal = false"></button>
           </div>
           <div class="modal-body">
-            <div class="form-group">
-              <label>Raison du rejet *</label>
-              <textarea
-                v-model="rejectReason"
-                class="form-control"
-                rows="4"
-                placeholder="Indiquez la raison du rejet..."
-                required
-              ></textarea>
-            </div>
+            <label class="form-label fw-semibold">
+              Raison du rejet <span class="text-danger">*</span>
+            </label>
+            <textarea
+              v-model="rejectReason"
+              class="form-control"
+              rows="4"
+              placeholder="Expliquez pourquoi ce rapport est rejeté..."
+              required
+            ></textarea>
           </div>
           <div class="modal-footer">
-            <button @click="showRejectModal = false" class="btn btn-secondary">Annuler</button>
-            <button @click="rejectReport" :disabled="rejecting || !rejectReason.trim()" class="btn btn-danger">
-              {{ rejecting ? 'Rejet...' : 'Confirmer le rejet' }}
+            <button
+              type="button"
+              class="btn btn-secondary"
+              @click="showRejectModal = false"
+              :disabled="rejecting"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="rejectReport"
+              :disabled="rejecting || !rejectReason.trim()"
+            >
+              <span v-if="rejecting">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Rejet...
+              </span>
+              <span v-else>
+                <i class="bi bi-x-circle me-2"></i>
+                Confirmer le rejet
+              </span>
             </button>
           </div>
         </div>
       </div>
-    </Teleport>
+    </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../services/api'
+import type { ExpenseReport, ExpenseItem, MileageExpense } from '../types'
 import AppLayout from '../components/AppLayout.vue'
 import AddExpenseItemModal from '../components/AddExpenseItemModal.vue'
 import AddMileageExpenseModal from '../components/AddMileageExpenseModal.vue'
-import type { ExpenseReport, ExpenseItem, MileageExpense } from '../types'
 
 const router = useRouter()
 const route = useRoute()
+const reportId = ref(route.params.id)
+const isNew = computed(() => reportId.value === 'new')
 
-const reportId = computed(() => {
-  const id = route.params.id
-  return id === 'new' ? null : Number(id)
-})
-const isNew = computed(() => reportId.value === null)
-
-const loading = ref(false)
+const loading = ref(true)
 const saving = ref(false)
 const submitting = ref(false)
 const approving = ref(false)
 const rejecting = ref(false)
 const error = ref('')
+
 const report = ref<ExpenseReport | null>(null)
 const items = ref<ExpenseItem[]>([])
 const mileageExpenses = ref<MileageExpense[]>([])
-const canApprove = ref(false) // TODO: Get from user permissions
 
-const showExpenseItemModal = ref(false)
+const showExpenseModal = ref(false)
 const showMileageModal = ref(false)
 const showRejectModal = ref(false)
 const rejectReason = ref('')
 
 const formData = ref({
   title: '',
+  period_start: new Date().toISOString().split('T')[0],
+  period_end: new Date().toISOString().split('T')[0],
   description: ''
 })
 
+const canApprove = computed(() => {
+  // TODO: Check user permissions
+  return true
+})
+
 const loadReport = async () => {
-  if (isNew.value) return
+  if (isNew.value) {
+    loading.value = false
+    return
+  }
 
   loading.value = true
   error.value = ''
   try {
-    report.value = await api.expenseReports.get(reportId.value!)
-    formData.value.title = report.value.title
-    formData.value.description = report.value.description || ''
-
-    // Load items
-    const itemsResponse: any = await api.expenseItems.list(reportId.value!)
-    items.value = itemsResponse.data || []
-
-    // Load mileage expenses
-    const mileageResponse: any = await api.mileageExpenses.list(reportId.value!)
-    mileageExpenses.value = mileageResponse.data || []
+    const data: any = await api.expenseReports.get(Number(reportId.value))
+    report.value = data
+    items.value = data.items || []
+    mileageExpenses.value = data.mileage_expenses || []
+    formData.value = {
+      title: data.title,
+      period_start: data.period_start,
+      period_end: data.period_end,
+      description: data.description || ''
+    }
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors du chargement'
+    error.value = err.response?.data?.message || 'Erreur lors du chargement du rapport'
   } finally {
     loading.value = false
   }
@@ -318,10 +508,10 @@ const saveReport = async () => {
   error.value = ''
   try {
     if (isNew.value) {
-      const created: any = await api.expenseReports.create(formData.value)
-      router.push(`/expense-reports/${created.id}`)
+      const response: any = await api.expenseReports.create(formData.value)
+      router.push(`/expense-reports/${response.id}`)
     } else {
-      await api.expenseReports.update(reportId.value!, formData.value)
+      await api.expenseReports.update(Number(reportId.value), formData.value)
       await loadReport()
     }
   } catch (err: any) {
@@ -332,13 +522,12 @@ const saveReport = async () => {
 }
 
 const submitReport = async () => {
-  if (!confirm('Êtes-vous sûr de vouloir soumettre ce rapport ?')) return
-
+  if (!confirm('Soumettre ce rapport pour approbation ?')) return
   submitting.value = true
   error.value = ''
   try {
-    await api.expenseReports.submit(reportId.value!)
-    router.push('/expense-reports')
+    await api.expenseReports.submit(Number(reportId.value))
+    await loadReport()
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Erreur lors de la soumission'
   } finally {
@@ -348,11 +537,10 @@ const submitReport = async () => {
 
 const approveReport = async () => {
   if (!confirm('Approuver ce rapport de frais ?')) return
-
   approving.value = true
   error.value = ''
   try {
-    await api.expenseReports.approve(reportId.value!)
+    await api.expenseReports.approve(Number(reportId.value))
     await loadReport()
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Erreur lors de l\'approbation'
@@ -362,15 +550,11 @@ const approveReport = async () => {
 }
 
 const rejectReport = async () => {
-  if (!rejectReason.value.trim()) {
-    alert('Veuillez indiquer la raison du rejet')
-    return
-  }
-
+  if (!rejectReason.value.trim()) return
   rejecting.value = true
   error.value = ''
   try {
-    await api.expenseReports.reject(reportId.value!, rejectReason.value)
+    await api.expenseReports.reject(Number(reportId.value), rejectReason.value)
     showRejectModal.value = false
     rejectReason.value = ''
     await loadReport()
@@ -381,43 +565,19 @@ const rejectReport = async () => {
   }
 }
 
-const deleteItem = async (itemId: number) => {
-  if (!confirm('Supprimer cette dépense ?')) return
-
-  try {
-    await api.expenseItems.delete(itemId)
-    await loadReport()
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de la suppression'
-  }
-}
-
-const deleteMileageExpense = async (mileageId: number) => {
-  if (!confirm('Supprimer ce frais kilométrique ?')) return
-
-  try {
-    await api.mileageExpenses.delete(mileageId)
-    await loadReport()
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de la suppression'
-  }
-}
-
 const addExpenseItem = () => {
-  showExpenseItemModal.value = true
+  showExpenseModal.value = true
 }
 
 const addMileageExpense = () => {
   showMileageModal.value = true
 }
 
-const handleExpenseItemAdded = () => {
-  showExpenseItemModal.value = false
+const handleExpenseAdded = () => {
   loadReport()
 }
 
 const handleMileageAdded = () => {
-  showMileageModal.value = false
   loadReport()
 }
 
@@ -425,12 +585,16 @@ const goBack = () => {
   router.push('/expense-reports')
 }
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR')
-}
-
 const formatAmount = (amount: number): string => {
   return amount.toFixed(3)
+}
+
+const formatDate = (date: string): string => {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
 }
 
 const getStatusLabel = (status?: string): string => {
@@ -444,367 +608,54 @@ const getStatusLabel = (status?: string): string => {
   return status ? labels[status] || status : ''
 }
 
-onMounted(() => {
-  if (!isNew.value) {
-    loadReport()
+const getStatusClass = (status?: string): string => {
+  const classes: Record<string, string> = {
+    draft: 'bg-secondary',
+    submitted: 'bg-primary',
+    approved: 'bg-success',
+    rejected: 'bg-danger',
+    paid: 'bg-info'
   }
+  return status ? classes[status] || 'bg-secondary' : 'bg-secondary'
+}
+
+onMounted(() => {
+  loadReport()
 })
 </script>
 
 <style scoped>
-.expense-report-detail {
-  max-width: 1200px;
-  margin: 0 auto;
+.category-icon {
+  font-size: 1.5rem;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 2rem;
-}
-
-.header h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
-}
-
-.reference {
-  color: #6b7280;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-draft {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-.status-submitted {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.status-approved {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-rejected {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.status-paid {
-  background-color: #e0e7ff;
-  color: #3730a3;
-}
-
-.actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.btn-secondary:hover {
-  background-color: #d1d5db;
-}
-
-.btn-success {
-  background-color: #10b981;
-  color: white;
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: #059669;
-}
-
-.btn-danger {
-  background-color: #ef4444;
-  color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #dc2626;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 3rem;
-}
-
-.error {
-  color: #ef4444;
-  background-color: #fee2e2;
-  border-radius: 0.5rem;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-.card h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-}
-
-.section-header {
+.summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  padding: 0.75rem 0;
 }
 
-.section-header h2 {
-  margin: 0;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-control:disabled {
-  background-color: #f3f4f6;
-  cursor: not-allowed;
-}
-
-.rejection-notice {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #fee2e2;
-  border-left: 4px solid #ef4444;
-  border-radius: 0.5rem;
-  color: #991b1b;
-}
-
-.empty-message {
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-}
-
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.item-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.category-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: white;
-}
-
-.item-amount {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.item-details {
-  margin-bottom: 0.75rem;
-}
-
-.item-details p {
-  margin: 0.25rem 0;
-  font-size: 0.875rem;
-}
-
-.item-date {
-  color: #6b7280;
-}
-
-.item-description {
-  color: #6b7280;
-  font-style: italic;
-}
-
-.item-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.totals {
-  background-color: #f9fafb;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  font-size: 1rem;
-}
-
-.total-final {
-  border-top: 2px solid #e5e7eb;
+.summary-item.total {
+  border-top: 2px solid var(--border-color);
   padding-top: 1rem;
   margin-top: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
 }
 
-.total-value {
-  font-weight: 600;
-}
-
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-.modal-container {
-  background: white;
-  border-radius: 0.75rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.close-button {
-  font-size: 2rem;
+.summary-item .label {
   color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
+  font-weight: 500;
 }
 
-.close-button:hover {
-  color: #1f2937;
+.summary-item .value {
+  font-weight: 600;
 }
 
-.modal-body {
-  padding: 1.5rem;
+.list-group-item:last-child {
+  border-bottom: none;
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+.modal {
+  display: block;
 }
 </style>
