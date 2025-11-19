@@ -59,12 +59,25 @@ compta/
 └── docker-compose.yml    # Development environment
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local frontend development)
-- PHP 8.3+ (for local backend development)
+- Docker & Docker Compose (recommended)
+- OR: Node.js 18+, PHP 8.3+, PostgreSQL 16, Redis 7
+
+### ⚡ Installation en 1 commande
+
+```bash
+git clone https://github.com/haythemsaa/compta.git
+cd compta
+chmod +x install.sh
+./install.sh
+```
+
+Le script interactif vous guidera à travers :
+- **Option 1** : Installation Docker (recommandée)
+- **Option 2** : Installation locale
+- **Option 3** : Configuration production
 
 ### Using Docker (Recommended)
 
@@ -76,17 +89,11 @@ cd compta
 # Start all services
 docker-compose up -d
 
-# Install backend dependencies
-docker-compose exec compteo-backend composer install
-
-# Run migrations and seeders
-docker-compose exec compteo-backend php artisan migrate --seed
-
-# Install frontend dependencies
-docker-compose exec compteo-frontend npm install
+# Run migrations and seeders (with demo data)
+docker-compose exec backend php artisan migrate --seed
 
 # Access the application
-# Frontend: http://localhost:5173
+# Frontend: http://localhost:3000
 # Backend API: http://localhost:8000
 # Mailhog: http://localhost:8025
 ```
@@ -144,12 +151,36 @@ After running seeders, you can log in with these test accounts:
 Complete API documentation is available in [docs/API.md](docs/API.md).
 
 **Key Endpoints:**
-- `POST /api/auth/login` - Authentication
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/user` - Get current user
+
+### Expense Reports
 - `GET /api/expense-reports` - List expense reports
-- `POST /api/expense-reports/{id}/submit` - Submit report for approval
+- `POST /api/expense-reports` - Create new report
+- `GET /api/expense-reports/{id}` - Get report details
+- `PUT /api/expense-reports/{id}` - Update report
+- `DELETE /api/expense-reports/{id}` - Delete report
+- `POST /api/expense-reports/{id}/submit` - Submit for approval
+- `POST /api/expense-reports/{id}/approve` - Approve report
+- `POST /api/expense-reports/{id}/reject` - Reject report
+
+### Export Endpoints ✨ NEW
+- `GET /api/expense-reports/{id}/export/pdf` - Export single report as PDF
+- `GET /api/expense-reports/{id}/export/excel` - Export single report as Excel
+- `POST /api/expense-reports/export/excel` - Export multiple reports as Excel
+
+### Other Endpoints
 - `POST /api/media/upload` - Upload receipts
 - `POST /api/media/{id}/ocr` - Process OCR
 - `GET /api/dashboard` - Dashboard statistics
+- `GET /api/dashboard/trends` - Expense trends
+- `GET /api/dashboard/category-breakdown` - Category statistics
+- `GET /api/expense-categories` - List categories
+- `GET /api/vehicles` - List vehicles
+- `POST /api/vehicles` - Add vehicle
 
 ## Database Schema
 
@@ -179,7 +210,9 @@ Complete API documentation is available in [docs/API.md](docs/API.md).
 - **Build Tool**: Vite 6.x
 - **State Management**: Pinia 2.3
 - **Routing**: Vue Router 4.5
-- **Styling**: Tailwind CSS 3.4
+- **Styling**: Bootstrap 5.3.2
+- **Icons**: Bootstrap Icons 1.11.3 (1800+ icons)
+- **Animations**: Animate.css 4.1.1
 - **HTTP Client**: Axios
 
 ### DevOps
@@ -187,6 +220,81 @@ Complete API documentation is available in [docs/API.md](docs/API.md).
 - **Database**: PostgreSQL
 - **Reverse Proxy**: Nginx (production)
 - **Email**: Mailhog (development)
+
+## 🚀 Production Deployment
+
+### Automated Deployment
+
+```bash
+# Deploy to production with one command
+./deploy.sh
+```
+
+**The script automatically:**
+1. ✅ Creates backup of database and files
+2. ✅ Pulls latest code from Git
+3. ✅ Installs/updates dependencies (Composer & npm)
+4. ✅ Runs database migrations
+5. ✅ Builds frontend for production
+6. ✅ Clears and rebuilds caches
+7. ✅ Restarts services (PHP-FPM, nginx, queues)
+8. ✅ Performs health checks
+9. ✅ Rolls back automatically on failure
+
+### Automated Backups
+
+```bash
+# Manual backup
+./backup.sh
+
+# Schedule automatic backups (cron)
+crontab -e
+
+# Add this line for daily backups at 2 AM
+0 2 * * * /var/www/compteo-tn/backup.sh >> /var/log/compteo-backup.log 2>&1
+```
+
+**Backup includes:**
+- PostgreSQL database (compressed)
+- Redis data
+- Uploaded files (storage/app)
+- Environment configuration (encrypted)
+- Weekly and monthly archives
+- Optional S3 upload
+
+### Nginx Configuration
+
+```bash
+# Copy nginx config
+sudo cp nginx.conf /etc/nginx/sites-available/compteo-tn
+sudo ln -s /etc/nginx/sites-available/compteo-tn /etc/nginx/sites-enabled/
+
+# Test and reload
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Features:**
+- SSL/TLS with Let's Encrypt
+- HTTP/2 support
+- GZIP compression
+- Static file caching
+- Rate limiting (API: 60/min, Login: 5/min)
+- Security headers (HSTS, CSP, etc.)
+
+### Environment Configuration
+
+See [backend/.env.production.example](backend/.env.production.example) for complete production configuration with 100+ variables including:
+- Application settings
+- Database (PostgreSQL)
+- Cache & Queue (Redis)
+- Email (SMTP, SendGrid, Mailgun)
+- File storage (S3, DigitalOcean Spaces)
+- Tunisia-specific settings (TVA, mileage rates)
+- Security settings
+- Third-party integrations
+- Monitoring (Sentry, New Relic)
+- Backup configuration
 
 ## Development Workflow
 
@@ -231,23 +339,50 @@ Complete API documentation is available in [docs/API.md](docs/API.md).
 - **Frontend**: Vue.js 3 Composition API, TypeScript strict mode
 - **Git**: Conventional Commits
 
+## 📦 Production Features
+
+### ✅ Deployment & DevOps
+- **One-command installation** (`install.sh`) - Interactive setup script
+- **Automated deployment** (`deploy.sh`) - Zero-downtime deployments
+- **Automated backups** (`backup.sh`) - Daily/weekly/monthly with S3 support
+- **Nginx configuration** - Production-ready with SSL, caching, rate limiting
+- **Docker Compose** - Full stack containerization
+- **Environment templates** - Complete `.env.production.example` with 100+ variables
+
+### 📊 Export & Reporting
+- ✅ **PDF Export** - Professional HTML-based PDF exports
+- ✅ **Excel/CSV Export** - Single or multiple reports
+- ✅ **Email Templates** - Beautiful responsive email notifications
+  - Report submitted (to approvers)
+  - Report approved (to employee)
+  - Report rejected (with reasons)
+- ✅ **Real-time Dashboard** - Statistics and analytics
+
+### 🗄️ Data & Backup
+- ✅ **Complete Database Seeders** - 6 realistic expense reports with all statuses
+- ✅ **Automated Backups** - PostgreSQL, Redis, files, environment
+- ✅ **Backup Retention** - Daily (30d), Weekly (4w), Monthly (12m)
+- ✅ **S3 Integration** - Optional cloud backup storage
+
 ## Roadmap
 
-### Phase 1 - MVP (Current)
+### Phase 1 - MVP ✅ COMPLETE
 - [x] Backend API with all controllers
 - [x] Database schema and migrations
 - [x] Authentication and authorization
 - [x] Expense report workflow
 - [x] Mileage calculation
 - [x] Media upload
-- [ ] Frontend integration
-- [ ] Basic testing
+- [x] Frontend with Bootstrap 5
+- [x] PDF/Excel exports
+- [x] Email notifications templates
+- [x] Production deployment scripts
+- [x] Complete documentation
 
 ### Phase 2 - Enhancement
 - [ ] OCR integration (Google Cloud Vision)
 - [ ] Distance calculation (Google Maps API)
-- [ ] Email notifications
-- [ ] PDF export for reports
+- [ ] Automated testing (PHPUnit + Vitest)
 - [ ] Advanced filtering and search
 - [ ] Batch operations
 

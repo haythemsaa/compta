@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ExpenseCategorySeeder::class,
             DemoDataSeeder::class,
+            CompleteExpenseReportsSeeder::class,
         ]);
     }
 }

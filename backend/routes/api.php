@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseReportController;
+use App\Http\Controllers\Api\ExpenseReportExportController;
 use App\Http\Controllers\Api\ExpenseItemController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\MileageExpenseController;
@@ -27,6 +28,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/expense-reports/{expenseReport}/approve', [ExpenseReportController::class, 'approve']);
     Route::post('/expense-reports/{expenseReport}/reject', [ExpenseReportController::class, 'reject']);
     Route::post('/expense-reports/{expenseReport}/pay', [ExpenseReportController::class, 'pay']);
+
+    // Expense Reports Export
+    Route::get('/expense-reports/{expenseReport}/export/pdf', [ExpenseReportExportController::class, 'exportPDF']);
+    Route::get('/expense-reports/{expenseReport}/export/excel', [ExpenseReportExportController::class, 'exportExcel']);
+    Route::post('/expense-reports/export/excel', [ExpenseReportExportController::class, 'exportMultipleExcel']);
 
     // Expense Items
     Route::apiResource('expense-reports.items', ExpenseItemController::class)->shallow();
